@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def EulerRichardson(T, dt,N, R,I, A):
+class EulerRichardson():
 	'''
 	Funcion para solucionar ecuaciones diferenciales utilizando
 	el metodo de Euler-Richardson
@@ -12,123 +12,155 @@ def EulerRichardson(T, dt,N, R,I, A):
 	I  : numero de infectados iniciales  [int] 
 	A  : proporcion de infectados versus casos totales confirmados [float]
 	'''
+	def __init__(self, T, dt ,N, R, I, A):
+		"""
+			Inicializa constantes, listas y condiciones iniciales.
+
+			TO DO: Acuerdate de ser consistente con las variables. Tienes que añadirle el self si no
+			no van a existir en este metodo.
+		"""
+
+		wk = 7
+		yr = 365
+
+		self.T = T*wk
+		self.dt = dt
+		self.N = N
+		self.R = R
+		self.I = I
+		self.A = A
 
 
+		Tc = 5
+		Tr = 14
+		self.M = 0.001
+		self.delta = 0.05
+		self.alpha = self.A
+		self.gamma = 1/Tr
+		self.beta = 1/Tc
 
-	# Constantes
-	wk = 7
-	yr = 365
-	Tc = 5       # tiempo promedio en lka que la gente se junta
-	Tr = 14      # Tiempo necesario para que alguien se recupere
-	M = 0.001    # Mortalidad
-	delta = 0.05
-	alpha = A
-	gamma = 1/Tr
-	beta = 1/Tc
 
-	T = T*wk
-
-	# Arrays para guardar los datos 
-	General = []       # Lista de todos los datos
-	Rf = np.zeros(T)   # Recovered people
-	If = np.zeros(T)   # Infected people
-	Sf = np.zeros(T)   # Suceptible people
-	x  = np.zeros(T)   # Counter 
-	Npp = np.zeros(T)  # S + I + R
-	R2 = np.zeros(T)   # People death
-	R1 = np.zeros(T)   # People recovered
-	C = np.zeros(T)    # Beds needed
-	P = np.zeros(T)    # Positive Test taken
+		self.rf = np.zeros(self.T)   
+		self.if_ = np.zeros(self.T)   
+		self.sf = np.zeros(self.T)   
+		self.x  = np.zeros(self.T)   
+		self.npp = np.zeros(self.T)  
+		self.r2 = np.zeros(self.T)   
+		self.r1 = np.zeros(self.T)   
+		self.c = np.zeros(self.T)    
+		self.p = np.zeros(self.T)    
 	
-	# Condiciones iniciales
-	Rf[0] = R
-	If[0] = I
-	Sf[0] = N-If[0]
-	Npp[0] = N
-	R1[0] = 0
-	R2[0] = 0
-	C[0] = 0
+		
+		
+		# Condiciones iniciales
+		self.rf[0] = self.R
+		self.if_[0] = self.I
+		self.sf[0] = self.N-self.if_[0]
+		self.npp[0] = self.N
+		self.r1[0] = 0
+		self.r2[0] = 0
+		self.c[0] = 0
 
-	# Loop para el metodo Euler-Richardson
+	def solve(self):
+		"""
+			Loop para el metodo Euler-Richardson
 
-	for n in range(0,T-1):
-	    Sfmid = Sf[n] + 0.5*dt*(-beta*(If[n]*Sf[n])/N)
-	    Rfmid = Rf[n] + 0.5*dt*gamma*If[n]
-	    Ifmid = If[n] + 0.5*dt*((beta*If[n]*Sf[n])/N - gamma*If[n])
-	    
-	    Sf[n+1] = Sf[n] + dt*(-beta*(Ifmid*Sfmid)/N)
-	    Rf[n+1] = Rf[n] + dt*gamma*Ifmid
-	    If[n+1] = If[n] + dt*((beta*Ifmid*Sfmid)/N - gamma*Ifmid)
-	    
-	    
-	    Npp[n+1] = Sf[n+1] + Rf[n+1] + If[n+1]
-	    R2[n+1] = M*Rf[n]
-	    R1[n+1] = Rf[n] - R2[n]
-	    P[n+1] = If[n]/alpha + P[n]
-	    C[n+1] = delta*If[n]
+			TO DO: Acuerdate de ser consistente con las variables. Tienes que añadirle el self si no
+			no van a existir en este metodo.
+		"""
+		for n in range(0,self.T-1):
+		    sfmid = self.sf[n] + 0.5*self.dt*(-self.beta*(self.if_[n]*self.sf[n])/self.N)
+		    rfmid = self.rf[n] + 0.5*self.dt*self.gamma*self.if_[n]
+		    if_mid = self.if_[n] + 0.5*self.dt*((self.beta*self.if_[n]*self.sf[n])/self.N - self.gamma*self.if_[n])
+		    
+		    self.sf[n+1] = self.sf[n] + self.dt*(-self.beta*(if_mid*sfmid)/self.N)
+		    self.rf[n+1] = self.rf[n] + self.dt*self.gamma*if_mid
+		    self.if_[n+1] = self.if_[n] + self.dt*((self.beta*if_mid*sfmid)/self.N - self.gamma*if_mid)
+			#if_[n+1] = if_[n] + self.dt*((beta*if_mid*sfmid)/self.N - gamma*if_mid)
+		    
+		    
+		    self.npp[n+1] = self.sf[n+1] + self.rf[n+1] + self.if_[n+1]
+		    self.r2[n+1] = self.M*self.rf[n]
+		    self.r1[n+1] = self.rf[n] - self.r2[n]
+		    self.p[n+1] = self.if_[n]/self.alpha + self.p[n]
+		    self.c[n+1] = self.delta*self.if_[n]
+	
+		    self.x[n+1] = n
+	
+		return (self.sf, self.rf, self.if_, self.r1, self.r2, self.npp, self.p, self.c, self.x)
 
-	    x[n+1] = n
+	def plot1(self,show=True, savefig=None):
+		"""
+			TO DO: Acuerdate de ser consistente con las variables. Tienes que añadirle el self si no
+			no van a existir en este metodo.
+		"""
+		plt.figure(figsize = (15,6))
+		plt.plot(self.x,self.rf, label = 'Recovered')
+		plt.plot(self.x,self.sf, label = 'Suceptible')
+		plt.plot(self.x,self.if_, label = 'Infected')
+		plt.plot(self.x,self.npp, label = 'S+I+R', ls = '--')
+		plt.legend(loc = 'best', fontsize = 13)
+		plt.xlabel('Days', labelpad = 15, fontsize = 15)
+		plt.ylabel('Pople number ', labelpad = 15, fontsize = 15)
+		plt.title('S-I-R epidemic model', fontsize = 15)
 
-	General.append(Sf)
-	General.append(Rf)
-	General.append(If)
-	General.append(R1)
-	General.append(R2)
-	General.append(Npp)
-	General.append(P)
-	General.append(C)
-	General.append(x)
+		if isinstance(savefig, str):
+			plt.savefig(savefig)
 
+		if show:
+			plt.show()
 
-	return General
+	def plot2(self,show=True, savefig=None):	
+		plt.figure(figsize = (20,5))
+		plt.subplot(2,2,1)
+		plt.plot(self.x,self.c, label= 'Beds ', color = 'crimson')
+		plt.legend(loc = 'best', fontsize = 15)
+		plt.xlabel('Days', labelpad = 15, fontsize = 15)
+		plt.ylabel('Beds number ', labelpad = 15, fontsize = 15)
+	
+		plt.subplot(2,2,2)
+		plt.plot(self.x,self.p, label= 'Positive test (R1)', color = 'k')
+		plt.legend(loc = 'best', fontsize = 15)
+		plt.xlabel('Days', labelpad = 15, fontsize = 15)
+		plt.ylabel('Possitive tests', labelpad = 15, fontsize = 15)
+	
+	
+		plt.subplot(2,2,3)
+		plt.plot(self.x,self.r2, label= 'People Death (R2)', color = 'magenta')
+		plt.legend(loc = 'best', fontsize = 15)
+		plt.xlabel('Days', labelpad = 15, fontsize = 15)
+		plt.ylabel('Pople number ', labelpad = 15, fontsize = 15)
+	
+	
+		plt.subplot(2,2,4)
+		plt.plot(self.x,self.r1, label= 'People recovered (R1)', color = 'olive')
+		plt.legend(loc = 'best', fontsize = 15)
+		plt.xlabel('Days', labelpad = 15, fontsize = 15)
+	
+		if isinstance(savefig, str):
+			plt.savefig(savefig)
 
-def Plots(Sf,Rf,If,R1,R2,Npp,P,C,x):
-
-	plt.figure(figsize = (15,6))
-	plt.plot(x,Rf, label = 'Recovered')
-	plt.plot(x,Sf, label = 'Suceptible')
-	plt.plot(x,If, label = 'Infected')
-	plt.plot(x,Npp, label = 'S+I+R', ls = '--')
-	plt.legend(loc = 'best', fontsize = 13)
-	plt.xlabel('Days', labelpad = 15, fontsize = 15)
-	plt.ylabel('Pople number ', labelpad = 15, fontsize = 15)
-	plt.title('S-I-R epidemic model', fontsize = 15)
-	#plt.savefig('./SIR_Eu_Rich.png')
-	plt.show()
-
-
-	plt.figure(figsize = (20,5))
-	plt.subplot(2,2,1)
-	plt.plot(x,C, label= 'Beds ', color = 'crimson')
-	plt.legend(loc = 'best', fontsize = 15)
-	plt.xlabel('Days', labelpad = 15, fontsize = 15)
-	plt.ylabel('Beds number ', labelpad = 15, fontsize = 15)
-
-	plt.subplot(2,2,2)
-	plt.plot(x,P, label= 'Positive test (R1)', color = 'k')
-	plt.legend(loc = 'best', fontsize = 15)
-	plt.xlabel('Days', labelpad = 15, fontsize = 15)
-	plt.ylabel('Possitive tests', labelpad = 15, fontsize = 15)
-
-
-	plt.subplot(2,2,3)
-	plt.plot(x,R2, label= 'People Death (R2)', color = 'magenta')
-	plt.legend(loc = 'best', fontsize = 15)
-	plt.xlabel('Days', labelpad = 15, fontsize = 15)
-	plt.ylabel('Pople number ', labelpad = 15, fontsize = 15)
-
-
-	plt.subplot(2,2,4)
-	plt.plot(x,R1, label= 'People recovered (R1)', color = 'olive')
-	plt.legend(loc = 'best', fontsize = 15)
-	plt.xlabel('Days', labelpad = 15, fontsize = 15)
-
-	#plt.savefig('./beds_positive_test_200I.png')
-	plt.show()
+		if show:
+			plt.show()
 
 
-Data = EulerRichardson(156, 0.11,100000, 0,1, 3)
+# MAIN PROGRAM
+def main():
 
-Plots(Data[0],Data[1], Data[2], Data[3],Data[4], Data[5], Data[6],Data[7], Data[8])
+	# Crea la instancia EulerRichardson
+	data = EulerRichardson(312,0.1,100000,0,1,3)
+
+	# Aplica el metodo para resolver la ED
+	data.solve()	
+	
+	# Grafica los resultados
+	data.plot1(show=True, savefig='SIR_Eu_Rich.png')
+	data.plot2(show=True, savefig='beds_positive_test_200I.png')
+
+
+# La siguiente sentencia evita que se ejecute alguna funcion
+# cuando el script es importado y no ejecutado desde la terminal
+if __name__ == "__main__":
+	main()
 
 
